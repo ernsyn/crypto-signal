@@ -1,22 +1,30 @@
 # Crypto Signals
 
-Crypto Signals is a command line tool that automates your crypto currency Technical Analysis (TA) and trading.
+### Development state: Beta (Code is stable, documentation is often lagging)
+
+### Join our community [Discord](https://discord.gg/MWTJVFf) channel!
+
+Crypto Signals is a command line tool that automates your crypto currency Technical Analysis (TA).
 
 Track over 500 coins across Bittrex, Bitfinex, GDAX, Gemini and more!
 
 Technical Analysis Automated:
+* Momentum
 * Relative Strength Index (RSI)
 * Ichimoku Cloud (Leading Span A, Leading Span B, Conversion Line, Base Line)
 * Simple Moving Average
 * Exponential Moving Average
-* Breakouts / Pumps
 * MACD
+* MFI
+* OBV
+* VWAP
 
 Alerts:
 * SMS via Twilio
 * Email
 * Slack
 * Telegram
+* Discord
 
 Features:
 * Modular code for easy trading strategy implementation
@@ -24,31 +32,36 @@ Features:
 
 You can build on top of this tool and implement algorithm trading and some machine learning models to experiment with predictive analysis.
 
-Coming Soon:
-* Automtated buying/selling
-* Web Client :)
+## Installing And Running
+The commands listed below are intended to be run in a terminal.
 
+1. Install [docker CE](https://docs.docker.com/install/)
 
-Shoutouts:
-* To Bittrex for an awesome API
-* Eric Somdahl for writing the Python wrapper for the Bittrex API
-* Ryan Mullin for implementing the getHistoricalData() method on v2 of the Bittrex API
+1. Create a config.yml file in your current directory. See the Configuring config.yml section below for customizing settings.
 
-# How to use (Docker)
-* First make sure you have [Docker installed](https://docs.docker.com/engine/installation/)
-* Next, to create the docker image run `make build` in the root of the project directory.
-* Once built copy template.env to .env and add your API keys, at a minimum read-only Bittrex keys are required.
-* Make sure to also update the symbol\_pairs you'd like to monitor within app/default-config.json, following the symbol pair format of base\_currency/quote\_currency (i.e. BTC/ETH)
+1. In a terminal run the application. `docker run --rm -v $PWD/config.yml:/app/config.yml shadowreaver/crypto-signal:master`.
 
-## How to run
-In the root directory run `docker-compose run app` or `make run` if you don't have docker-compose.
+1. When you want to update the application run `docker pull shadowreaver/crypto-signal:master`
 
-# How to use (Local)
-To install the dependencies for this project, run "pip install -r requirements.txt" in the app directory.
-You can add a secrets.json file to the app directory of your project to customize the configuration, the defaults are in app/default-config.json.
+### Configuring config.yml
 
-## How to run
-Navigate to the app directory in your terminal and run with "python app.py"
+For a list of all possible options for config.yml and some example configurations look [here](docs/config.md)
+
+# FAQ
+
+## Common Questions
+
+### Why does Tradingview show me different information than crypto-signal?
+There are a number of reasons why the information crypto-signal provides could be different from tradingview and the truth is we have no way to be 100% certain of why the differences exist. Below are some things that affect the indicators that _may_ differ between crypto-signal and tradingview.
+
+- tradingview will have more historical data and for some indicators this can make a [big difference](https://ta-lib.org/d_api/ta_setunstableperiod.html).
+
+- tradingview uses a rolling 15 minute timeframe which means that the data they are analyzing can be more recent than ours by a factor of minutes or hours depending on what candlestick timeframe you are using.
+
+- tradingview may collect data in a way that means the timeperiods we have may not line up with theirs, which can have an effect on the analysis. This seems unlikely to us, but stranger things have happened.
+
+### So if it doesn't match Tradingview how do you know your information is accurate?
+Underpinning crypto-signal for most of our technical analysis is [TA-Lib](https://ta-lib.org/index.html) which is an open source technical analysis project started in 1999. This project has been used in a rather large number of technical analysis projects over the last two decades and is one of the most trusted open source libraries for analyzing candlestick data.
 
 # Liability
-I am not your financial adviser, nor is this tool. Use this program as an educational tool, and nothing more. None of the contributors to this project are liable for any loses you may incur. Be wise and always do your own research.
+I am not your financial adviser, nor is this tool. Use this program as an educational tool, and nothing more. None of the contributors to this project are liable for any losses you may incur. Be wise and always do your own research.

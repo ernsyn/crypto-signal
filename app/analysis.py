@@ -1,94 +1,73 @@
+"""Executes the trading strategies and analyzes the results.
 """
-Executes the trading strategies and analyzes the results.
-"""
+
+import math
+from datetime import datetime
 
 import structlog
-from strategies.breakout import Breakout
-from strategies.ichimoku_cloud import IchimokuCloud
-from strategies.relative_strength_index import RelativeStrengthIndex
-from strategies.moving_averages import MovingAverages
-from strategies.moving_avg_convergence_divergence import MovingAvgConvDiv
-from strategies.bollinger_bands import BollingerBands
+import pandas
+from talib import abstract
+
+from analyzers.indicators import *
+from analyzers.informants import *
+from analyzers import *
 
 class StrategyAnalyzer():
+    """Contains all the methods required for analyzing strategies.
     """
-    Executes the trading strategies and analyzes the results.
-    """
-    def __init__(self, exchange_interface):
-        self.exchange_interface = exchange_interface
+
+    def __init__(self):
+        """Initializes StrategyAnalyzer class """
         self.logger = structlog.get_logger()
 
-    def analyze_macd(self, market_pair, time_unit='1d'):
-        macd_analyzer = MovingAvgConvDiv()
-        historical_data = self.exchange_interface.get_historical_data(
-            market_pair=market_pair,
-            period_count=26,
-            time_unit=time_unit
-        )
-        macd_value = macd_analyzer.calculate_MACD_delta(historical_data)
-        return macd_value
 
-    def analyze_breakout(self, market_pair, period_count=5, time_unit='5m'):
-        breakout_analyzer = Breakout()
-        historical_data = self.exchange_interface.get_historical_data(
-            market_pair=market_pair,
-            period_count=period_count,
-            time_unit=time_unit)
-        breakout_value, is_breaking_out = breakout_analyzer.find_breakout(historical_data)
-        return breakout_value, is_breaking_out
+    def indicator_dispatcher(self):
+        """Returns a dictionary for dynamic anaylsis selector
 
-    def analyze_rsi(self, market_pair, period_count=1000, time_unit='1h'):
-        rsi_analyzer = RelativeStrengthIndex()
-        historical_data = self.exchange_interface.get_historical_data(
-            market_pair=market_pair,
-            period_count=period_count,
-            time_unit=time_unit
-        )
-        rsi_value = rsi_analyzer.find_rsi(historical_data, period_count)
-        return rsi_value
+        Returns:
+            dictionary: A dictionary of functions to serve as a dynamic analysis selector.
+        """
 
-    def analyze_moving_averages(self, market_pair, period_count=20, time_unit='5m'):
-        ma_analyzer = MovingAverages()
-        historical_data = self.exchange_interface.get_historical_data(
-            market_pair=market_pair,
-            period_count=period_count,
-            time_unit=time_unit
-        )
-        sma_value = ma_analyzer.calculate_sma(period_count, historical_data)
-        ema_value = ma_analyzer.calculate_ema(period_count, historical_data)
-        return sma_value, ema_value
+        dispatcher = {
+            'ichimoku': ichimoku.Ichimoku().analyze,
+            'macd': macd.MACD().analyze,
+            'rsi': rsi.RSI().analyze,
+            'momentum': momentum.Momentum().analyze,
+            'mfi': mfi.MFI().analyze,
+            'stoch_rsi': stoch_rsi.StochasticRSI().analyze,
+            'obv': obv.OBV().analyze
+        }
 
-    def analyze_ichimoku_cloud(self, market_pair):
-        ic_analyzer = IchimokuCloud()
-        base_line_data = self.exchange_interface.get_historical_data(
-            market_pair=market_pair,
-            period_count=26,
-            time_unit='1d'
-        )
-        conversion_line_data = self.exchange_interface.get_historical_data(
-            market_pair=market_pair,
-            period_count=9,
-            time_unit='1d'
-        )
-        span_b_data = self.exchange_interface.get_historical_data(
-            market_pair=market_pair,
-            period_count=52,
-            time_unit='1d'
-        )
+        return dispatcher
 
-        leading_span_a = ic_analyzer.calculate_leading_span_a(base_line_data, conversion_line_data)
-        leading_span_b = ic_analyzer.calculate_leading_span_b(span_b_data)
-        return leading_span_a, leading_span_b
 
-    def analyze_bollinger_bands(self, market_pair, period_count=21, std_dev=2., time_unit='5m'):
-        bollingers = BollingerBands()
+    def informant_dispatcher(self):
+        """Returns a dictionary for dynamic informant selector
 
-        historical_data = self.exchange_interface.get_historical_data(
-            market_pair=market_pair,
-            period_count=period_count,
-            time_unit=time_unit
-        )
+        Returns:
+            dictionary: A dictionary of functions to serve as a dynamic informant selector.
+        """
 
-        upper_band, lower_band = bollingers.get_bollinger_bands(historical_data, period=period_count, k=std_dev)
-        return upper_band, lower_band
+        dispatcher = {
+            'sma': sma.SMA().analyze,
+            'ema': ema.EMA().analyze,
+            'vwap': vwap.VWAP().analyze,
+            'bollinger_bands': bollinger_bands.Bollinger().analyze,
+            'ohlcv': ohlcv.OHLCV().analyze
+        }
 
+        return dispatcher
+
+
+    def crossover_dispatcher(self):
+        """Returns a pandas.DataFrame for dynamic crossover selector
+
+        Returns:
+            dictionary: A dictionary of functions to serve as a dynamic crossover selector.
+        """
+
+        dispatcher = {
+            'std_crossover': crossover.CrossOver().analyze
+        }
+
+        return dispatcher

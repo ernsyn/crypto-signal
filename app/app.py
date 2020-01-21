@@ -1,43 +1,47 @@
 #!/usr/local/bin/python
-"""
-Main
+"""Main app module
 """
 
 import time
+import sys
 
 import logs
 import conf
 import structlog
+
+from conf import Configuration
 from exchange import ExchangeInterface
 from notification import Notifier
-from analysis import StrategyAnalyzer
 from behaviour import Behaviour
 
 def main():
+    """Initializes the application
+    """
      # Load settings and create the config object
-
-    config = conf.Configuration()
-    settings = config.fetch_settings()
-    exchange_config = config.fetch_exchange_config()
-    notifier_config = config.fetch_notifier_config()
-    behaviour_config = config.fetch_behaviour_config()
+    config = Configuration()
+    settings = config.settings
 
     # Set up logger
-    logs.configure_logging(settings['loglevel'], settings['app_mode'])
+    logs.configure_logging(settings['log_level'], settings['log_mode'])
+    logger = structlog.get_logger()
 
-    exchange_interface = ExchangeInterface(exchange_config)
-    strategy_analyzer = StrategyAnalyzer(exchange_interface)
-    notifier = Notifier(notifier_config)
-    behaviour_manager = Behaviour(behaviour_config)
+    # Configure and run configured behaviour.
+    exchange_interface = ExchangeInterface(config.exchanges)
+    notifier = Notifier(config.notifiers)
 
-    behaviour = behaviour_manager.get_behaviour(settings['selected_task'])
-
-    behaviour.run(
-        settings['symbol_pairs'],
-        settings['update_interval'],
+    behaviour = Behaviour(
+        config,
         exchange_interface,
-        strategy_analyzer,
-        notifier)
+        notifier
+    )
+
+    while True:
+        behaviour.run(settings['market_pairs'], settings['output_mode'])
+        logger.info("Sleeping for %s seconds", settings['update_interval'])
+        time.sleep(settings['update_interval'])
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit(0)
